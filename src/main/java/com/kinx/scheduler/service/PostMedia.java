@@ -1,61 +1,57 @@
 package com.kinx.scheduler.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.http.HttpRequest;
-import java.nio.file.Path;
+import java.util.HashMap;
 
 @Slf4j
 @Service
 public class PostMedia {
-    private HttpURLConnection con;
-    private Integer categoryId = 3434;
-
-
-    HttpRequest httpRequest;
     private PrintWriter writer = null;
     private OutputStream output = null;
-    public void mediaUploadRequest(String token){
-        try {
-            log.info("================= 미디어 upload 요청 시작 =============================");
-            Path path = Path.of("static/cat.mp4");
-            log.info("receive token " +token);
-            String reqUrl = baseUrl + "/v2/media/" + categoryId;
-            log.info("req URL " + reqUrl);
-            URL url = new URL(reqUrl);
+    public String mediaUploadRequest(String token) throws JsonProcessingException {
+        //Spring restTemplate 방법
+        RestTemplate restTemplate = new RestTemplate();
+        String url = baseUrl + "/v2/media/" + categoryId;
 
-            con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "multipart/form-data");
-            con.setRequestProperty("X-Mbus-Token", token);
+        MultipartBodyBuilder multipartBodyBuilder = new MultipartBodyBuilder();
+        Resource file2 = new ClassPathResource("/static/cat.mp4");
+        multipartBodyBuilder.part("file", file2, MediaType.MULTIPART_FORM_DATA);
+        MultiValueMap<String, HttpEntity<?>> multipartBody = multipartBodyBuilder.build();
 
-            log.info("================= get 요청 끝, 응답 받기 시작 =============================");
-            int status = con.getResponseCode();
-            log.info(String.valueOf(status));
-            log.info(url.toString());
-            log.info(con.getResponseMessage());
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(MediaType.MULTIPART_FORM_DATA);
+        header.add("X-Mbus-Token",token);
+//        header.add("Content-Type","multipart/form-data; boundary=" + boundary);
 
-            if(status == 200) {
-                con.setDoInput(true);
-                con.setDoOutput(true);
-                this.output = con.getOutputStream();
-                this.writer = new PrintWriter(new OutputStreamWriter(this.output, "UTF-8"), true);
+        log.info("Req Header : "+ header.toString());
+        HttpEntity<?> entity = new HttpEntity<>(multipartBody, header);
 
-                StringBuilder sb = new StringBuilder();
-                sb.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + path + "\"").append("\\r\\n");
-                this.writer.append(sb).flush();
-            }else if(status == 400) {
-                log.info("status is 40000000000");
-            }
-        } catch(IOException e){
-            log.info("안돼ㅔㅔㅔ");
-        }
+        ResponseEntity<?> resultMap = restTemplate.postForEntity(url, entity, String.class);
+
+        HashMap<String, Object> result = new HashMap<String, Object>();
+        result.put("statusCode", resultMap.getStatusCodeValue()); //http status code를 확인
+        result.put("header", resultMap.getHeaders()); //헤더 정보 확인
+        result.put("body", resultMap.getBody()); //실제 데이터 정보 확인
+
+        //데이터를 제대로 전달 받았는지 확인 string형태로 파싱해줌
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonInString = mapper.writeValueAsString(resultMap.getBody());
+
+        return jsonInString;
     }
 }
