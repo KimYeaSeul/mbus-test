@@ -18,7 +18,7 @@ public class GetPostResponse {
     @JsonProperty("MediaId")
     private String mediaId;
     @JsonProperty("ObjectId")
-    private String objectId;
+    private Object objectId;
     @JsonProperty("Alias")
     private String alias;
     @JsonProperty("Duration")
