@@ -26,6 +26,7 @@ public class ReqUploadMedia {
 
     private LocalDateTime successDate;
 
+    private Long diffTime;
     @Builder
     public ReqUploadMedia(String filename, Long size, String mediaId) {
         this.filename = filename;

@@ -17,6 +17,9 @@ import java.util.Base64;
 @Service
 public class TokenService {
     private HttpURLConnection con;
+    private String email = "kys912@kinx.net";
+    private String apikey = "184e4edf65ca0bf5";
+    private String baseUrl = "https://api-v2.midibus.dev-kinxcdn.com";
     GetToken gt = new GetToken();
     public String tokenRequest(){
         String expire = String.valueOf((System.currentTimeMillis() / 1000) + 86400); // 1시간 = 3600, 24시간 = 86400
