@@ -1,4 +1,4 @@
-package com.kinx.scheduler.service;
+package com.kinx.scheduler.service.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kinx.scheduler.dto.GetToken;
