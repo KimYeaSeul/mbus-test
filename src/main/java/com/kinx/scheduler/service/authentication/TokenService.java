@@ -3,6 +3,7 @@ package com.kinx.scheduler.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kinx.scheduler.dto.GetToken;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -17,19 +18,21 @@ import java.util.Base64;
 @Service
 public class TokenService {
     private HttpURLConnection con;
-    private String email = "kys912@kinx.net";
-    private String apikey = "184e4edf65ca0bf5";
-    private String baseUrl = "https://api-v2.midibus.dev-kinxcdn.com";
+    @Value("${my.email}")
+    private String email;
+    @Value("${my.apikey}")
+    private String apikey;
+    @Value("${my.url}")
+    private String baseUrl;
     GetToken gt = new GetToken();
-    public String tokenRequest(){
+    public String createToken(){
         String expire = String.valueOf((System.currentTimeMillis() / 1000) + 86400); // 1시간 = 3600, 24시간 = 86400
         // HttpURLConnection 방법
         Base64.Encoder encoder = Base64.getEncoder();
         byte[] target = (email+":"+apikey).getBytes();
         String auth = new String(encoder.encode(target));
-
         try {
-            log.info("================= get 요청 시작 =============================");
+            log.info("================= token Request Start =============================");
             String reqUrl = baseUrl +"/v2/token?expire=" + expire;
             URL url = new URL(reqUrl);
 
@@ -37,13 +40,8 @@ public class TokenService {
             con.setRequestMethod("GET");
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestProperty("Authorization", "Basic "+auth);
-
-            log.info("request URL : " + reqUrl);
-            log.info("auth val : " +auth);
-
-            log.info("================= get 요청 끝, 응답 받기 시작 =============================");
             int status = con.getResponseCode();
-            log.info("code : " + status);
+            log.info("respnse code : {}" , status);
 
             if(status == 200) {
                 InputStream is = con.getInputStream();
@@ -52,8 +50,8 @@ public class TokenService {
                 while ((line = in.readLine()) != null) {
                     ObjectMapper om = new ObjectMapper();
                     gt = om.readValue(line, GetToken.class);
-                    log.info("getToken : "+ gt.getToken());
-                    log.info("expire : "+ gt.getExpire());
+                    log.info("getToken : {} ", gt.getToken());
+                    log.info("expire : {}", gt.getExpire());
                 }
                 in.close();
                 return gt.getToken();
@@ -64,7 +62,7 @@ public class TokenService {
             throw new RuntimeException(e);
         } finally{
             con.disconnect();
-            log.info("================= Token Service finally =============================");
+            log.info("================= Token Get Service finally =============================");
         }
     }
 }
